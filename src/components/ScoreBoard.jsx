@@ -2,8 +2,10 @@
 // Componente do placar
 function ScoreBoard({
   score,
+  timeLeft,
   difficulty,
   gameFinished,
+  isTimeOver,
   isPreviewing,
   isChecking,
   onRestart,
@@ -15,6 +17,9 @@ function ScoreBoard({
     medio: 'Medio',
     dificil: 'Dificil',
   }[difficulty]
+
+  // Aplica destaque visual quando o tempo esta acabando.
+  const timerClassName = timeLeft <= 15 ? 'text-red-700 font-bold' : 'text-emerald-950'
 
   return (
     <header className="mx-auto flex w-full max-w-3xl flex-col gap-3 rounded-2xl bg-white/90 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -29,9 +34,12 @@ function ScoreBoard({
       <div className="flex items-center gap-4 text-sm font-medium text-emerald-950">
         {/* Pontuação acumulada na sessão atual. */}
         <span>Pontuacao: {score}</span>
+        {/* Temporizador regressivo fixo de 60 segundos para todas as dificuldades. */}
+        <span className={timerClassName}>Tempo: {timeLeft}s</span>
         {/* Feedback de estado para orientar o jogador durante o fluxo da rodada. */}
         {isPreviewing && <span>Memorize as cartas...</span>}
         {!isPreviewing && isChecking && <span>Validando jogada...</span>}
+        {isTimeOver && <span>Tempo encerrado</span>}
 
         {/* Ação para reiniciar a partida mantendo o modo selecionado. */}
         <button

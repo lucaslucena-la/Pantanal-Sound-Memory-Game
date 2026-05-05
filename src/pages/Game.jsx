@@ -1,4 +1,5 @@
 import GameBoard from '../components/GameBoard.jsx'
+import ResultModal from '../components/ResultModal.jsx'
 import ScoreBoard from '../components/ScoreBoard.jsx'
 import { useGameLogic } from '../hooks/useGameLogic.js'
 
@@ -7,7 +8,11 @@ function Game({ difficulty, onBackToMenu }) {
   const {
     cards,
     score,
+    timeLeft,
+    isTimeOver,
     gameFinished,
+    showResultModal,
+    resultType,
     isPreviewing,
     isChecking,
     handleCardClick,
@@ -15,6 +20,7 @@ function Game({ difficulty, onBackToMenu }) {
     canPlaySoundHint,
     isCardVisible,
     restartGame,
+    restartFromModal,
   } = useGameLogic(difficulty)
 
   return (
@@ -30,8 +36,10 @@ function Game({ difficulty, onBackToMenu }) {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:gap-5 md:gap-6">
         <ScoreBoard
           score={score}
+          timeLeft={timeLeft}
           difficulty={difficulty}
           gameFinished={gameFinished}
+          isTimeOver={isTimeOver}
           isPreviewing={isPreviewing}
           isChecking={isChecking}
           onRestart={restartGame}
@@ -46,6 +54,14 @@ function Game({ difficulty, onBackToMenu }) {
           isCardVisible={isCardVisible}
         />
       </div>
+
+      <ResultModal
+        isOpen={showResultModal}
+        resultType={resultType}
+        score={score}
+        onRestart={restartFromModal}
+        onBackToMenu={onBackToMenu}
+      />
     </main>
   )
 }

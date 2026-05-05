@@ -6,6 +6,7 @@ const PREVIEW_TIME_MS = 4000
 const MISMATCH_DELAY_MS = 800
 const MATCH_POINTS = 10
 const MISMATCH_POINTS = 5
+const GAME_TIME_SECONDS = 60
 
 // Mapeamento de dificuldades para quantidade de animais
 const DIFFICULTY_ANIMAL_COUNT = {
@@ -89,9 +90,26 @@ export function useGameLogic(difficulty = 'facil') {
   const [isChecking, setIsChecking] = useState(false)
   const [isPreviewing, setIsPreviewing] = useState(true)
   const [score, setScore] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(GAME_TIME_SECONDS)
+  const [isTimeOver, setIsTimeOver] = useState(false)
+  const [showResultModal, setShowResultModal] = useState(false)
+  const [resultType, setResultType] = useState(null)
   const [isHintSoundPlaying, setIsHintSoundPlaying] = useState(false)
   const previewTimeoutRef = useRef(null)
+  const timerIntervalRef = useRef(null)
   const currentAudioRef = useRef(null)
+
+  /**
+   * Limpa o intervalo do temporizador quando ele nao e mais necessario.
+   */
+  const clearGameTimer = () => {
+    if (!timerIntervalRef.current) {
+      return
+    }
+
+    window.clearInterval(timerIntervalRef.current)
+    timerIntervalRef.current = null
+  }
 
   /**
    * Interrompe qualquer audio ativo antes de iniciar um novo.
@@ -174,9 +192,14 @@ export function useGameLogic(difficulty = 'facil') {
     setListenedSoundCards([])
     setIsChecking(false)
     setIsPreviewing(true)
+    setTimeLeft(GAME_TIME_SECONDS)
+    setIsTimeOver(false)
+    setShowResultModal(false)
+    setResultType(null)
     setIsHintSoundPlaying(false)
     setScore(0)
 
+    clearGameTimer()
     stopCurrentAudio()
 
     if (previewTimeoutRef.current) {
@@ -236,7 +259,7 @@ export function useGameLogic(difficulty = 'facil') {
    * @param {Object} card - Carta clicada
    */
   const handleCardClick = (card) => {
-    if (isPreviewing || isChecking || card.matched || flippedCards.length === 2) {
+    if (isPreviewing || isChecking || isTimeOver || showResultModal || card.matched || flippedCards.length === 2) {
       return
     }
 
@@ -276,7 +299,7 @@ export function useGameLogic(difficulty = 'facil') {
    * @param {Object} card - Carta para reproduzir dica
    */
   const handleSoundHintClick = (card) => {
-    if (isPreviewing || isChecking || isCardVisible(card) || !canPlaySoundHint(card)) {
+    if (isPreviewing || isChecking || isTimeOver || showResultModal || isCardVisible(card) || !canPlaySoundHint(card)) {
       return
     }
 
@@ -289,6 +312,15 @@ export function useGameLogic(difficulty = 'facil') {
    * Reinicia o jogo chamando initializeGame
    */
   const restartGame = () => {
+    initializeGame()
+  }
+
+  /**
+   * Fecha o modal de resultado ao escolher jogar novamente.
+   * Em seguida, reinicia a partida mantendo a dificuldade atual.
+   */
+  const restartFromModal = () => {
+    setShowResultModal(false)
     initializeGame()
   }
 
@@ -308,6 +340,7 @@ export function useGameLogic(difficulty = 'facil') {
         window.clearTimeout(previewTimeoutRef.current)
       }
 
+      clearGameTimer()
       stopCurrentAudio()
       setIsHintSoundPlaying(false)
     }
@@ -321,6 +354,52 @@ export function useGameLogic(difficulty = 'facil') {
     [cards.length, matchedCards.length],
   )
 
+  /**
+   * Effect: inicia o temporizador regressivo apos o fim da pre-visualizacao.
+   * O tempo para de contar quando o jogo termina, quando o modal aparece ou quando o tempo acaba.
+   */
+  useEffect(() => {
+    if (isPreviewing || gameFinished || isTimeOver || showResultModal) {
+      clearGameTimer()
+      return
+    }
+
+    if (timerIntervalRef.current) {
+      return
+    }
+
+    timerIntervalRef.current = window.setInterval(() => {
+      setTimeLeft((currentTime) => {
+        if (currentTime <= 1) {
+          clearGameTimer()
+          setIsTimeOver(true)
+          setResultType('timeout')
+          setShowResultModal(true)
+          return 0
+        }
+
+        return currentTime - 1
+      })
+    }, 1000)
+
+    return () => {
+      clearGameTimer()
+    }
+  }, [isPreviewing, gameFinished, isTimeOver, showResultModal])
+
+  /**
+   * Effect: quando todos os pares sao encontrados, exibe o modal de vitoria.
+   */
+  useEffect(() => {
+    if (!gameFinished || showResultModal) {
+      return
+    }
+
+    clearGameTimer()
+    setResultType('win')
+    setShowResultModal(true)
+  }, [gameFinished, showResultModal])
+
   return {
     cards,
     flippedCards,
@@ -328,11 +407,16 @@ export function useGameLogic(difficulty = 'facil') {
     isChecking,
     isPreviewing,
     score,
+    timeLeft,
+    isTimeOver,
     gameFinished,
+    showResultModal,
+    resultType,
     handleCardClick,
     handleSoundHintClick,
     canPlaySoundHint,
     isCardVisible,
     restartGame,
+    restartFromModal,
   }
 }
