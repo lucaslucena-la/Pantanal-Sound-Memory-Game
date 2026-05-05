@@ -81,7 +81,7 @@ function Card({ card, difficulty, isVisible, isShaking, isMismatched, onFlip, on
 
           {card.type === 'sound' && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-              <div className="rounded-full bg-white/90 px-3 py-2 text-2xl">🔊</div>
+              <div className="rounded-full bg-white/90 px-1.5 py-1 text-sm sm:px-2 sm:py-1.5 sm:text-base md:px-3 md:py-2 md:text-xl">🔊</div>
             </div>
           )}
 
