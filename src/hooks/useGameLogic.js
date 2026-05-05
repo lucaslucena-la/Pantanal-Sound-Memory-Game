@@ -236,7 +236,8 @@ export function useGameLogic(difficulty = 'facil') {
       )
       setMatchedCards((current) => [...current, firstCard.id, secondCard.id])
       setScore((current) => current + MATCH_POINTS)
-      playSound('/sounds/correct.mp3')
+      // Ao acertar o par, reproduzimos o som do proprio animal para reforco educativo.
+      playSound(firstCard.sound)
       setFlippedCards([])
       setIsChecking(false)
       return

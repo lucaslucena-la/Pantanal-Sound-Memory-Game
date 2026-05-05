@@ -1,118 +1,81 @@
 # Pantanal Sound Memory Game
 
-Jogo educativo de memoria com associacao visual e sonora da fauna do Pantanal.
+Jogo educativo de memória com associação visual e sonora da fauna do Pantanal.
 
-## Descricao
+[![Deploy](https://img.shields.io/badge/deploy-vercel-black)](https://pantanal-sound-memory-game.vercel.app/)
+[![React](https://img.shields.io/badge/react-18-blue)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/vite-latest-yellow)](https://vitejs.dev/)
 
-O jogador deve encontrar pares corretos entre:
+## Sobre o projeto
 
-- 1 carta com imagem do animal
-- 1 carta de som do mesmo animal
+O jogador deve encontrar pares corretos entre uma carta com a imagem do animal e uma carta com o som correspondente. Cada partida começa com uma pré-visualização de todas as cartas abertas, ajudando o jogador a memorizar as posições antes de iniciar.
 
-O projeto foi construido com foco em organizacao, evolucao futura e experiencia responsiva.
+## Funcionalidades
 
-## Funcionalidades atuais
-
-- Menu inicial com nome do jogo, selecao de dificuldade e botao para iniciar partida
-- Dificuldades: Facil, Medio e Dificil
-- Pre-visualizacao inicial com todas as cartas abertas por alguns segundos
-- Logica completa do memory game (2 cartas por rodada, validacao de par e bloqueios de interacao)
-- Pontuacao: acerto `+10` e erro `-5` com minimo em `0`
-- Dica sonora no verso da carta de som com uso unico por carta
-- Estado de fim de jogo quando todos os pares sao encontrados
+- Menu inicial com seleção de dificuldade (Fácil, Médio, Difícil)
+- Pré-visualização inicial com todas as cartas abertas
+- Dica sonora no verso de cada carta de som (uso único por carta)
+- Pontuação dinâmica: `+10` por acerto, `-5` por erro (mínimo 0)
+- Temporização de 60 segundos por partida — fim de jogo ao esgotar o tempo
+- Estado de fim de jogo ao encontrar todos os pares antes do tempo
+- Reinício mantendo a dificuldade selecionada
 - Layout responsivo para desktop, tablet e mobile
 
-## Logica do jogo
+## Tecnologias
 
-A logica principal esta centralizada em `src/hooks/useGameLogic.js`.
+| Tecnologia   | Uso                                  |
+|--------------|--------------------------------------|
+| React        | Interface e componentes              |
+| Vite         | Bundler e dev server                 |
+| Tailwind CSS | Estilização                          |
+| clsx         | Composição de classes condicionais   |
 
-Estados principais:
+## Como rodar
 
-- `cards`
-- `flippedCards`
-- `matchedCards`
-- `listenedSoundCards`
-- `isChecking`
-- `isPreviewing`
-- `score`
-- `gameFinished`
-
-Fluxo resumido:
-
-1. Inicializa o deck conforme a dificuldade
-2. Exibe pre-visualizacao inicial
-3. Libera cliques e controla virada de cartas
-4. Valida acerto/erro ao virar a segunda carta
-5. Atualiza pontuacao e estado de match
-6. Permite reiniciar mantendo a dificuldade
-
-## Tecnologias utilizadas
-
-- React
-- Vite
-- JavaScript
-- Tailwind CSS
-- clsx
-
-## Como rodar o projeto
-
-Pre-requisitos:
-
-- Node.js
-- npm
-
-Comandos:
+**Pré-requisitos:** Node.js e npm
 
 ```bash
+# instalar dependências
 npm install
+
+# iniciar em desenvolvimento
 npm run dev
-```
 
-Build de producao:
-
-```bash
+# gerar build de produção
 npm run build
 ```
 
-## Deploy
+## Lógica do jogo
 
-O projeto esta publicado na Vercel:
+Centralizada em `src/hooks/useGameLogic.js`. O hook controla o ciclo completo da partida:
 
-- https://pantanal-sound-memory-game.vercel.app/
+1. Inicializa o deck conforme a dificuldade
+2. Exibe a pré-visualização inicial
+3. Libera cliques e gerencia a virada de cartas
+4. Valida acerto/erro ao virar a segunda carta
+5. Atualiza pontuação e estado de match
+6. Detecta fim de jogo e permite reiniciar
+
+Estados gerenciados: `cards` · `flippedCards` · `matchedCards` · `listenedSoundCards` · `isChecking` · `isPreviewing` · `score` · `gameFinished`
 
 ## Estrutura de pastas
 
 ```text
 src/
-  assets/
-    images/
-    sounds/
-  components/
-    Card.jsx
-    GameBoard.jsx
-    ScoreBoard.jsx
-  data/
-    animals.js
-  hooks/
-    useGameLogic.js
-  pages/
-    Home.jsx
-    Game.jsx
-  styles/
-    index.css
+  assets/          # imagens e sons dos animais
+  components/      # Card, GameBoard, ScoreBoard
+  data/            # configuração dos animais
+  hooks/           # useGameLogic (lógica central)
+  pages/           # Home, Game
+  styles/          # CSS global
   App.jsx
   main.jsx
 ```
 
 ## Animais configurados
 
-- Onca-pintada
-- Capivara
-- Arara-azul
-- Anta
-- Jacare
-- Tamandua-bandeira
-- Ariranha
-- Lobo-guara
-- Sapo-cururu
-- Bugio
+Onça-pintada · Capivara · Arara-azul · Anta · Jacaré · Tamanduá-bandeira · Ariranha · Lobo-guará · Sapo-cururu · Bugio
+
+## Deploy
+
+Publicado na Vercel: https://pantanal-sound-memory-game.vercel.app/
