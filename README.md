@@ -1,47 +1,32 @@
 # Pantanal Sound Memory Game
 
-Jogo educativo de memória com associação visual e sonora da fauna do Pantanal.
+Jogo educativo de memoria com associacao visual e sonora da fauna do Pantanal.
 
-## Descrição
+## Descricao
 
 O jogador deve encontrar pares corretos entre:
 
 - 1 carta com imagem do animal
 - 1 carta de som do mesmo animal
 
-O projeto foi construído com foco em organização, evolução futura e experiência responsiva.
+O projeto foi construido com foco em organizacao, evolucao futura e experiencia responsiva.
 
 ## Funcionalidades atuais
 
-- Menu inicial com:
-  - nome do jogo
-  - seleção de dificuldade
-  - botão para iniciar partida
-- Dificuldades:
-  - Fácil
-  - Médio
-  - Difícil
-- Pré-visualização inicial:
-  - todas as cartas ficam abertas por alguns segundos antes da rodada começar
-- Lógica completa do memory game:
-  - até 2 cartas por rodada
-  - validação de par por animal e tipo (`image` x `sound`)
-  - bloqueio de interação durante checagem
-- Pontuação:
-  - acerto: `+10`
-  - erro: `-5` (com mínimo em `0`)
-- Dica sonora no verso da carta de som:
-  - ícone no canto superior direito
-  - toca o som do animal da carta
-  - uso único por carta (depois o ícone fica desabilitado)
-- Estado de fim de jogo quando todos os pares são encontrados
+- Menu inicial com nome do jogo, selecao de dificuldade e botao para iniciar partida
+- Dificuldades: Facil, Medio e Dificil
+- Pre-visualizacao inicial com todas as cartas abertas por alguns segundos
+- Logica completa do memory game (2 cartas por rodada, validacao de par e bloqueios de interacao)
+- Pontuacao: acerto `+10` e erro `-5` com minimo em `0`
+- Dica sonora no verso da carta de som com uso unico por carta
+- Estado de fim de jogo quando todos os pares sao encontrados
 - Layout responsivo para desktop, tablet e mobile
 
-## Lógica do jogo
+## Logica do jogo
 
-A lógica principal está centralizada em `src/hooks/useGameLogic.js`.
+A logica principal esta centralizada em `src/hooks/useGameLogic.js`.
 
-Estados principais controlados no hook:
+Estados principais:
 
 - `cards`
 - `flippedCards`
@@ -55,10 +40,10 @@ Estados principais controlados no hook:
 Fluxo resumido:
 
 1. Inicializa o deck conforme a dificuldade
-2. Exibe pré-visualização inicial
+2. Exibe pre-visualizacao inicial
 3. Libera cliques e controla virada de cartas
 4. Valida acerto/erro ao virar a segunda carta
-5. Atualiza pontuação e estado de match
+5. Atualiza pontuacao e estado de match
 6. Permite reiniciar mantendo a dificuldade
 
 ## Tecnologias utilizadas
@@ -71,7 +56,7 @@ Fluxo resumido:
 
 ## Como rodar o projeto
 
-Pré-requisitos:
+Pre-requisitos:
 
 - Node.js
 - npm
@@ -83,8 +68,17 @@ npm install
 npm run dev
 ```
 
-Build de produção:
+Build de producao:
 
+```bash
+npm run build
+```
+
+## Deploy
+
+O projeto esta publicado na Vercel:
+
+- https://pantanal-sound-memory-game.vercel.app/
 
 ## Estrutura de pastas
 
@@ -112,14 +106,13 @@ src/
 
 ## Animais configurados
 
-- Onça-pintada
+- Onca-pintada
 - Capivara
 - Arara-azul
 - Anta
-- Jacaré
-- Tamanduá-bandeira
+- Jacare
+- Tamandua-bandeira
 - Ariranha
-- Lobo-guará
+- Lobo-guara
 - Sapo-cururu
 - Bugio
-

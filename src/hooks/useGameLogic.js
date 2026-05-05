@@ -89,21 +89,57 @@ export function useGameLogic(difficulty = 'facil') {
   const [isChecking, setIsChecking] = useState(false)
   const [isPreviewing, setIsPreviewing] = useState(true)
   const [score, setScore] = useState(0)
+  const [isHintSoundPlaying, setIsHintSoundPlaying] = useState(false)
   const previewTimeoutRef = useRef(null)
+  const currentAudioRef = useRef(null)
+
+  /**
+   * Interrompe qualquer audio ativo antes de iniciar um novo.
+   * Isso evita sobreposicao de sons ao clicar rapido em multiplos botoes.
+   */
+  const stopCurrentAudio = () => {
+    if (!currentAudioRef.current) {
+      return
+    }
+
+    currentAudioRef.current.pause()
+    currentAudioRef.current.currentTime = 0
+    currentAudioRef.current = null
+  }
 
   /**
    * Reproduz um arquivo de áudio com tratamento de erros
    * @param {string} soundPath - Caminho do arquivo de áudio
    */
-  const playSound = (soundPath) => {
+  const playSound = (soundPath, { lockHint = false } = {}) => {
     if (!soundPath) {
       return
     }
 
     try {
+      // Regra de ouro: sempre para o audio anterior antes de tocar outro.
+      stopCurrentAudio()
+
       const audio = new Audio(soundPath)
+      currentAudioRef.current = audio
+
+      // Quando for uma dica sonora do verso da carta, travamos novos cliques
+      // ate o audio terminar para impedir sobreposicao.
+      if (lockHint) {
+        setIsHintSoundPlaying(true)
+
+        audio.addEventListener('ended', () => {
+          setIsHintSoundPlaying(false)
+        }, { once: true })
+
+        audio.addEventListener('pause', () => {
+          setIsHintSoundPlaying(false)
+        }, { once: true })
+      }
+
       void audio.play()
     } catch (error) {
+      setIsHintSoundPlaying(false)
       console.warn('Nao foi possivel reproduzir o audio:', soundPath, error)
     }
   }
@@ -138,7 +174,10 @@ export function useGameLogic(difficulty = 'facil') {
     setListenedSoundCards([])
     setIsChecking(false)
     setIsPreviewing(true)
+    setIsHintSoundPlaying(false)
     setScore(0)
+
+    stopCurrentAudio()
 
     if (previewTimeoutRef.current) {
       window.clearTimeout(previewTimeoutRef.current)
@@ -174,14 +213,14 @@ export function useGameLogic(difficulty = 'facil') {
       )
       setMatchedCards((current) => [...current, firstCard.id, secondCard.id])
       setScore((current) => current + MATCH_POINTS)
-      playSound('/src/assets/sounds/correct.mp3')
+      playSound('/sounds/correct.mp3')
       setFlippedCards([])
       setIsChecking(false)
       return
     }
 
     // Mismatch: reproduz som de erro, penaliza pontuação e vira as cartas
-    playSound('/src/assets/sounds/error.mp3')
+    playSound('/sounds/error.mp3')
     window.setTimeout(() => {
       setScore((current) => Math.max(0, current - MISMATCH_POINTS))
       setFlippedCards([])
@@ -227,7 +266,7 @@ export function useGameLogic(difficulty = 'facil') {
    * @returns {boolean} True se dica está disponível
    */
   const canPlaySoundHint = (card) => {
-    return card.type === 'sound' && !listenedSoundCards.includes(card.id)
+    return card.type === 'sound' && !listenedSoundCards.includes(card.id) && !isHintSoundPlaying
   }
 
   /**
@@ -241,7 +280,8 @@ export function useGameLogic(difficulty = 'facil') {
       return
     }
 
-    playSound(card.sound)
+    // lockHint ativa o bloqueio temporario de novos cliques de dica sonora.
+    playSound(card.sound, { lockHint: true })
     setListenedSoundCards((current) => [...current, card.id])
   }
 
@@ -267,6 +307,9 @@ export function useGameLogic(difficulty = 'facil') {
       if (previewTimeoutRef.current) {
         window.clearTimeout(previewTimeoutRef.current)
       }
+
+      stopCurrentAudio()
+      setIsHintSoundPlaying(false)
     }
   }, [initializeGame])
 

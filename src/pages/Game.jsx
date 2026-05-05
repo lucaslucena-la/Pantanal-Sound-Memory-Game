@@ -1,7 +1,6 @@
 import GameBoard from '../components/GameBoard.jsx'
 import ScoreBoard from '../components/ScoreBoard.jsx'
 import { useGameLogic } from '../hooks/useGameLogic.js'
-import backgroundImage from '../assets/images/background.jpeg'
 
 function Game({ difficulty, onBackToMenu }) {
   // Hook centraliza o estado do jogo para manter a pagina limpa e escalavel.
@@ -22,7 +21,7 @@ function Game({ difficulty, onBackToMenu }) {
     <main
       className="min-h-screen p-2 sm:p-4 md:p-8"
       style={{
-        backgroundImage: `linear-gradient(rgba(4, 47, 46, 0.55), rgba(4, 47, 46, 0.55)), url(${backgroundImage})`,
+        backgroundImage: 'linear-gradient(rgba(4, 47, 46, 0.55), rgba(4, 47, 46, 0.55)), url(/images/background.jpeg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

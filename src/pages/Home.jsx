@@ -1,5 +1,4 @@
 import clsx from 'clsx'
-import backgroundImage from '../assets/images/background.jpeg'
 
 const difficultyOptions = [
   { id: 'facil', label: 'Fácil', description: 'Nivel introdutório para começar' },
@@ -12,7 +11,7 @@ function Home({ selectedDifficulty, onSelectDifficulty, onStartGame }) {
     <main
       className="min-h-screen p-4 sm:p-8"
       style={{
-        backgroundImage: `linear-gradient(rgba(4, 47, 46, 0.55), rgba(4, 47, 46, 0.55)), url(${backgroundImage})`,
+        backgroundImage: 'linear-gradient(rgba(4, 47, 46, 0.55), rgba(4, 47, 46, 0.55)), url(/images/background.jpeg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

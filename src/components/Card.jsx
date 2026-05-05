@@ -1,68 +1,41 @@
 import clsx from 'clsx'
 
-// Componente responsável por renderizar uma única carta do jogo.
-// Ele lida tanto com o estado visual (virada/oculta) quanto com interações do usuário.
 function Card({ card, difficulty, isVisible, onFlip, onSoundHintClick, canPlaySoundHint }) {
-  
-  // Determina se o jogo está no modo difícil para ajustar o layout (altura das cartas).
-  // Boa prática: centralizar variações de UI baseadas em estado/props.
   const isHardMode = difficulty === 'dificil'
 
   return (
     <button
       type="button"
-      
-      // Ao clicar na carta, dispara a lógica de flip (controlada externamente).
-      // Importante: o componente não controla o estado, apenas dispara eventos.
       onClick={() => onFlip(card)}
-
-      // clsx permite composição dinâmica de classes (boa prática em Tailwind).
       className={clsx(
-        'group relative w-full overflow-hidden rounded-lg border border-emerald-900/20 bg-emerald-50 p-0 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:rounded-xl',
-
-        // Ajuste de tamanho baseado na dificuldade
+        'perspective group relative w-full overflow-visible rounded-lg border border-emerald-900/20 bg-transparent p-0 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:rounded-xl',
         isHardMode ? 'h-24 sm:h-28 md:h-32' : 'h-28 sm:h-32 md:h-36',
-
-        // Quando a carta está visível (virada), aplica destaque visual
-        isVisible && 'bg-white ring-2 ring-amber-400',
+        isVisible && 'ring-2 ring-amber-400',
       )}
-
-      // Acessibilidade: descreve o estado da carta para leitores de tela
       aria-label={isVisible ? `Carta revelada: ${card.name}` : 'Carta virada'}
     >
-
-      {/* -------------------------------------------------- */}
-      {/* ESTADO: CARTA VIRADA (FACE OCULTA) */}
-      {/* -------------------------------------------------- */}
-      {!isVisible ? (
-        <div className="relative flex h-full items-center justify-center bg-emerald-700/90 text-lg font-semibold text-white">
-          
-          {/* Se for carta de som, exibe botão de "dica sonora" */}
+      <div
+        className={clsx(
+          'transform-style-preserve-3d relative h-full w-full transition-transform duration-500 ease-in-out',
+          isVisible && 'rotate-y-180',
+        )}
+      >
+        <div className="backface-hidden absolute inset-0 flex h-full items-center justify-center rounded-lg bg-emerald-700/90 text-lg font-semibold text-white md:rounded-xl">
           {card.type === 'sound' && (
             <button
               type="button"
-              
-              // IMPORTANTE:
-              // stopPropagation impede que o clique nesse botão vire a carta.
-              // Isso evita conflito entre "ouvir som" e "flip".
               onClick={(event) => {
                 event.stopPropagation()
                 onSoundHintClick(card)
               }}
-
               className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full text-lg shadow sm:right-2 sm:top-2 sm:h-9 sm:w-9"
-
-              // Acessibilidade + UX: informa se o som pode ou não ser reproduzido
               aria-label={
                 canPlaySoundHint
                   ? `Ouvir som de ${card.name}`
                   : `Audio de ${card.name} indisponivel`
               }
             >
-
-              {/* Ícone muda dependendo se o som está disponível */}
               {canPlaySoundHint ? (
-                // Ícone de som ativo
                 <svg
                   viewBox="0 0 24 24"
                   className="h-5 w-5 text-white drop-shadow sm:h-6 sm:w-6"
@@ -74,7 +47,6 @@ function Card({ card, difficulty, isVisible, onFlip, onSoundHintClick, canPlaySo
                   <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
                 </svg>
               ) : (
-                // Ícone de som desabilitado
                 <svg
                   viewBox="0 0 24 24"
                   className="h-5 w-5 text-white drop-shadow sm:h-6 sm:w-6"
@@ -88,42 +60,23 @@ function Card({ card, difficulty, isVisible, onFlip, onSoundHintClick, canPlaySo
               )}
             </button>
           )}
-
-          {/* Conteúdo padrão da carta virada */}
           ?
         </div>
-      ) : (
 
-        /* -------------------------------------------------- */
-        /* ESTADO: CARTA REVELADA */
-        /* -------------------------------------------------- */
-        <div className="relative h-full w-full bg-white">
-          
-          {/* Imagem do animal */}
-          <img
-            src={card.image}
-            alt={card.name}
-            className="h-full w-full object-cover"
-          />
+        <div className="backface-hidden rotate-y-180 absolute inset-0 rounded-lg bg-white md:rounded-xl">
+          <img src={card.image} alt={card.name} className="h-full w-full rounded-lg object-cover md:rounded-xl" />
 
-          {/* Overlay para cartas de som */}
-          {/* Isso comunica visualmente que essa carta é sonora */}
           {card.type === 'sound' && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-              <div className="rounded-full bg-white/90 px-3 py-2 text-2xl">
-                🔊
-              </div>
+              <div className="rounded-full bg-white/90 px-3 py-2 text-2xl">🔊</div>
             </div>
           )}
 
-          {/* Nome do animal com gradiente para legibilidade */}
           <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/65 to-transparent px-2 pb-1 pt-5 sm:px-3 sm:pb-2 sm:pt-8">
-            <span className="block text-[11px] font-semibold text-white sm:text-sm">
-              {card.name}
-            </span>
+            <span className="block text-[11px] font-semibold text-white sm:text-sm">{card.name}</span>
           </div>
         </div>
-      )}
+      </div>
     </button>
   )
 }
