@@ -19,7 +19,7 @@ function ScoreBoard({
   }[difficulty]
 
   // Aplica destaque visual quando o tempo esta acabando.
-  const timerClassName = timeLeft <= 15 ? 'text-red-700 font-bold' : 'text-emerald-950'
+  const timerClassName = timeLeft <= 10 ? 'text-red-700 font-bold' : 'text-emerald-950'
 
   return (
     <header className="mx-auto flex w-full max-w-3xl flex-col gap-3 rounded-2xl bg-white/90 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">

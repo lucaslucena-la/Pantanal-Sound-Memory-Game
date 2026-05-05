@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { animals } from '../data/animals.js'
+import animalCuriosities from '../data/animalCuriosities.json'
 
 // Constantes de configuração do jogo
 const PREVIEW_TIME_MS = 4000
 const MISMATCH_DELAY_MS = 800
+const MATCH_SHAKE_DURATION_MS = 420
+const CARD_FLIP_DURATION_MS = 500
+const MISMATCH_FEEDBACK_DURATION_MS = MISMATCH_DELAY_MS + CARD_FLIP_DURATION_MS
+const TIME_WARNING_START_SECONDS = 10
 const MATCH_POINTS = 10
 const MISMATCH_POINTS = 5
-const GAME_TIME_SECONDS = 60
+const DIFFICULTY_TIME_SECONDS = {
+  facil: 25,
+  medio: 40,
+  dificil: 60,
+}
 
 // Mapeamento de dificuldades para quantidade de animais
 const DIFFICULTY_ANIMAL_COUNT = {
@@ -76,6 +85,28 @@ function getAnimalsByDifficulty(difficulty) {
   return shuffledAnimals.slice(0, Math.min(animalsCount, animals.length))
 }
 
+function pickRandomCuriosity(list) {
+  if (!Array.isArray(list) || list.length === 0) {
+    return ''
+  }
+
+  const randomIndex = Math.floor(Math.random() * list.length)
+  return list[randomIndex]
+}
+
+function getGameTimeByDifficulty(difficulty) {
+  return DIFFICULTY_TIME_SECONDS[difficulty] ?? DIFFICULTY_TIME_SECONDS.dificil
+}
+
+function getRandomCuriosityIndex(curiosityCount, previousIndex) {
+  if (curiosityCount <= 1) {
+    return 0
+  }
+
+  const randomIndex = Math.floor(Math.random() * (curiosityCount - 1))
+  return randomIndex >= previousIndex ? randomIndex + 1 : randomIndex
+}
+
 /**
  * Hook customizado que encapsula toda a lógica do jogo da memória
  * Gerencia estado das cartas, pontuação, verificação de matches e interações do usuário
@@ -90,14 +121,24 @@ export function useGameLogic(difficulty = 'facil') {
   const [isChecking, setIsChecking] = useState(false)
   const [isPreviewing, setIsPreviewing] = useState(true)
   const [score, setScore] = useState(0)
-  const [timeLeft, setTimeLeft] = useState(GAME_TIME_SECONDS)
+  const [timeLeft, setTimeLeft] = useState(() => getGameTimeByDifficulty(difficulty))
   const [isTimeOver, setIsTimeOver] = useState(false)
   const [showResultModal, setShowResultModal] = useState(false)
   const [resultType, setResultType] = useState(null)
   const [isHintSoundPlaying, setIsHintSoundPlaying] = useState(false)
+  const [shakingMatchedCards, setShakingMatchedCards] = useState([])
+  const [mismatchedCards, setMismatchedCards] = useState([])
+  const [finalCuriosity, setFinalCuriosity] = useState('')
+  const [finalCuriosityAnimalName, setFinalCuriosityAnimalName] = useState('')
+  const [finalCuriosityAnimalImage, setFinalCuriosityAnimalImage] = useState('')
   const previewTimeoutRef = useRef(null)
   const timerIntervalRef = useRef(null)
   const currentAudioRef = useRef(null)
+  const timerWarningAudioRef = useRef(null)
+  const hasPlayedTimeWarningRef = useRef(false)
+  const matchShakeTimeoutRef = useRef(null)
+  const mismatchFeedbackTimeoutRef = useRef(null)
+  const lastCuriosityIndexByAnimalRef = useRef({})
 
   /**
    * Limpa o intervalo do temporizador quando ele nao e mais necessario.
@@ -123,6 +164,38 @@ export function useGameLogic(difficulty = 'facil') {
     currentAudioRef.current.pause()
     currentAudioRef.current.currentTime = 0
     currentAudioRef.current = null
+  }
+
+  const stopTimerWarningAudio = () => {
+    if (!timerWarningAudioRef.current) {
+      return
+    }
+
+    timerWarningAudioRef.current.pause()
+    timerWarningAudioRef.current.currentTime = 0
+    timerWarningAudioRef.current = null
+  }
+
+  const playTimerWarningAudio = () => {
+    if (timerWarningAudioRef.current || hasPlayedTimeWarningRef.current) {
+      return
+    }
+
+    try {
+      const warningAudio = new Audio('/sounds/tempo-alerta.mp3')
+      warningAudio.loop = false
+      warningAudio.volume = 0.35
+      timerWarningAudioRef.current = warningAudio
+      hasPlayedTimeWarningRef.current = true
+
+      warningAudio.addEventListener('ended', () => {
+        timerWarningAudioRef.current = null
+      }, { once: true })
+
+      void warningAudio.play()
+    } catch (error) {
+      console.warn('Nao foi possivel reproduzir o alerta de tempo:', error)
+    }
   }
 
   /**
@@ -192,18 +265,35 @@ export function useGameLogic(difficulty = 'facil') {
     setListenedSoundCards([])
     setIsChecking(false)
     setIsPreviewing(true)
-    setTimeLeft(GAME_TIME_SECONDS)
+    setTimeLeft(getGameTimeByDifficulty(difficulty))
     setIsTimeOver(false)
     setShowResultModal(false)
     setResultType(null)
     setIsHintSoundPlaying(false)
+    setShakingMatchedCards([])
+    setMismatchedCards([])
+    setFinalCuriosity('')
+    setFinalCuriosityAnimalName('')
+    setFinalCuriosityAnimalImage('')
+    hasPlayedTimeWarningRef.current = false
     setScore(0)
 
     clearGameTimer()
     stopCurrentAudio()
+    stopTimerWarningAudio()
 
     if (previewTimeoutRef.current) {
       window.clearTimeout(previewTimeoutRef.current)
+    }
+
+    if (matchShakeTimeoutRef.current) {
+      window.clearTimeout(matchShakeTimeoutRef.current)
+      matchShakeTimeoutRef.current = null
+    }
+
+    if (mismatchFeedbackTimeoutRef.current) {
+      window.clearTimeout(mismatchFeedbackTimeoutRef.current)
+      mismatchFeedbackTimeoutRef.current = null
     }
 
     previewTimeoutRef.current = window.setTimeout(() => {
@@ -227,6 +317,9 @@ export function useGameLogic(difficulty = 'facil') {
       firstCard.animal === secondCard.animal && firstCard.type !== secondCard.type
 
     if (isValidMatch) {
+      const willFinishGame = matchedCards.length + 2 === cards.length
+      const matchedIds = [firstCard.id, secondCard.id]
+
       setCards((currentCards) =>
         currentCards.map((card) =>
           card.id === firstCard.id || card.id === secondCard.id
@@ -235,16 +328,57 @@ export function useGameLogic(difficulty = 'facil') {
         ),
       )
       setMatchedCards((current) => [...current, firstCard.id, secondCard.id])
+      setShakingMatchedCards(matchedIds)
+
+      if (matchShakeTimeoutRef.current) {
+        window.clearTimeout(matchShakeTimeoutRef.current)
+      }
+
+      matchShakeTimeoutRef.current = window.setTimeout(() => {
+        setShakingMatchedCards([])
+        matchShakeTimeoutRef.current = null
+      }, MATCH_SHAKE_DURATION_MS)
+
       setScore((current) => current + MATCH_POINTS)
-      // Ao acertar o par, reproduzimos o som do proprio animal para reforco educativo.
-      playSound(firstCard.sound)
+      playSound('/sounds/acerto.mp3')
+
+      if (willFinishGame) {
+        const finalAnimalId = secondCard.animal
+        const curiosityList = animalCuriosities[finalAnimalId] ?? []
+        const previousCuriosityIndex = lastCuriosityIndexByAnimalRef.current[finalAnimalId]
+        const nextCuriosityIndex = getRandomCuriosityIndex(curiosityList.length, previousCuriosityIndex)
+        const selectedCuriosity = curiosityList[nextCuriosityIndex] || pickRandomCuriosity(curiosityList)
+        const finalAnimal = cards.find((card) => card.animal === finalAnimalId)
+
+        lastCuriosityIndexByAnimalRef.current[finalAnimalId] = nextCuriosityIndex
+
+        clearGameTimer()
+        stopTimerWarningAudio()
+        setFinalCuriosity(selectedCuriosity || 'Curiosidade indisponivel no momento.')
+        setFinalCuriosityAnimalName(finalAnimal?.name ?? secondCard.name)
+        setFinalCuriosityAnimalImage(finalAnimal?.image ?? secondCard.image ?? '')
+        setResultType('win')
+        setShowResultModal(true)
+      }
+
       setFlippedCards([])
       setIsChecking(false)
       return
     }
 
     // Mismatch: reproduz som de erro, penaliza pontuação e vira as cartas
-    playSound('/sounds/error.mp3')
+    setMismatchedCards([firstCard.id, secondCard.id])
+
+    if (mismatchFeedbackTimeoutRef.current) {
+      window.clearTimeout(mismatchFeedbackTimeoutRef.current)
+    }
+
+    mismatchFeedbackTimeoutRef.current = window.setTimeout(() => {
+      setMismatchedCards([])
+      mismatchFeedbackTimeoutRef.current = null
+    }, MISMATCH_FEEDBACK_DURATION_MS)
+
+    playSound('/sounds/erro.mp3')
     window.setTimeout(() => {
       setScore((current) => Math.max(0, current - MISMATCH_POINTS))
       setFlippedCards([])
@@ -271,7 +405,7 @@ export function useGameLogic(difficulty = 'facil') {
     const nextFlipped = [...flippedCards, card]
     setFlippedCards(nextFlipped)
 
-    if (card.type === 'sound') {
+    if (card.type === 'sound' && nextFlipped.length === 1) {
       playSound(card.sound)
     }
 
@@ -341,8 +475,17 @@ export function useGameLogic(difficulty = 'facil') {
         window.clearTimeout(previewTimeoutRef.current)
       }
 
+      if (matchShakeTimeoutRef.current) {
+        window.clearTimeout(matchShakeTimeoutRef.current)
+      }
+
+      if (mismatchFeedbackTimeoutRef.current) {
+        window.clearTimeout(mismatchFeedbackTimeoutRef.current)
+      }
+
       clearGameTimer()
       stopCurrentAudio()
+      stopTimerWarningAudio()
       setIsHintSoundPlaying(false)
     }
   }, [initializeGame])
@@ -373,6 +516,15 @@ export function useGameLogic(difficulty = 'facil') {
       setTimeLeft((currentTime) => {
         if (currentTime <= 1) {
           clearGameTimer()
+          stopTimerWarningAudio()
+          stopCurrentAudio()
+          try {
+            const loseAudio = new Audio('/sounds/decepcao.mp3')
+            currentAudioRef.current = loseAudio
+            void loseAudio.play()
+          } catch (error) {
+            console.warn('Nao foi possivel reproduzir o audio de derrota:', error)
+          }
           setIsTimeOver(true)
           setResultType('timeout')
           setShowResultModal(true)
@@ -388,18 +540,23 @@ export function useGameLogic(difficulty = 'facil') {
     }
   }, [isPreviewing, gameFinished, isTimeOver, showResultModal])
 
-  /**
-   * Effect: quando todos os pares sao encontrados, exibe o modal de vitoria.
-   */
   useEffect(() => {
-    if (!gameFinished || showResultModal) {
-      return
+    const shouldPlayWarningNow =
+      !isPreviewing &&
+      !gameFinished &&
+      !isTimeOver &&
+      !showResultModal &&
+      timeLeft === TIME_WARNING_START_SECONDS
+
+    if (shouldPlayWarningNow) {
+      playTimerWarningAudio()
     }
 
-    clearGameTimer()
-    setResultType('win')
-    setShowResultModal(true)
-  }, [gameFinished, showResultModal])
+    const shouldForceStopWarning = isPreviewing || gameFinished || isTimeOver || showResultModal
+    if (shouldForceStopWarning) {
+      stopTimerWarningAudio()
+    }
+  }, [isPreviewing, gameFinished, isTimeOver, showResultModal, timeLeft])
 
   return {
     cards,
@@ -413,10 +570,15 @@ export function useGameLogic(difficulty = 'facil') {
     gameFinished,
     showResultModal,
     resultType,
+    finalCuriosity,
+    finalCuriosityAnimalName,
+    finalCuriosityAnimalImage,
     handleCardClick,
     handleSoundHintClick,
     canPlaySoundHint,
     isCardVisible,
+    shakingMatchedCards,
+    mismatchedCards,
     restartGame,
     restartFromModal,
   }

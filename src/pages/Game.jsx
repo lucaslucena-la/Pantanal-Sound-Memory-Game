@@ -13,12 +13,17 @@ function Game({ difficulty, onBackToMenu }) {
     gameFinished,
     showResultModal,
     resultType,
+    finalCuriosity,
+    finalCuriosityAnimalName,
+    finalCuriosityAnimalImage,
     isPreviewing,
     isChecking,
     handleCardClick,
     handleSoundHintClick,
     canPlaySoundHint,
     isCardVisible,
+    shakingMatchedCards,
+    mismatchedCards,
     restartGame,
     restartFromModal,
   } = useGameLogic(difficulty)
@@ -52,6 +57,8 @@ function Game({ difficulty, onBackToMenu }) {
           onSoundHintClick={handleSoundHintClick}
           canPlaySoundHint={canPlaySoundHint}
           isCardVisible={isCardVisible}
+          shakingMatchedCards={shakingMatchedCards}
+          mismatchedCards={mismatchedCards}
         />
       </div>
 
@@ -59,6 +66,9 @@ function Game({ difficulty, onBackToMenu }) {
         isOpen={showResultModal}
         resultType={resultType}
         score={score}
+        finalCuriosity={finalCuriosity}
+        finalCuriosityAnimalName={finalCuriosityAnimalName}
+        finalCuriosityAnimalImage={finalCuriosityAnimalImage}
         onRestart={restartFromModal}
         onBackToMenu={onBackToMenu}
       />

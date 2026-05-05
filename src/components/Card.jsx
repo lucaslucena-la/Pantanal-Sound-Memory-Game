@@ -1,7 +1,15 @@
 import clsx from 'clsx'
 
-function Card({ card, difficulty, isVisible, onFlip, onSoundHintClick, canPlaySoundHint }) {
+function Card({ card, difficulty, isVisible, isShaking, isMismatched, onFlip, onSoundHintClick, canPlaySoundHint }) {
   const isHardMode = difficulty === 'dificil'
+  const handleHintMouseDown = (event) => {
+    event.stopPropagation()
+  }
+
+  const handleHintClick = (event) => {
+    event.stopPropagation()
+    onSoundHintClick(card)
+  }
 
   return (
     <button
@@ -10,7 +18,13 @@ function Card({ card, difficulty, isVisible, onFlip, onSoundHintClick, canPlaySo
       className={clsx(
         'perspective group relative w-full overflow-visible rounded-lg border border-emerald-900/20 bg-transparent p-0 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:rounded-xl',
         isHardMode ? 'h-24 sm:h-28 md:h-32' : 'h-28 sm:h-32 md:h-36',
-        isVisible && 'ring-2 ring-amber-400',
+        card.matched
+          ? 'ring-2 ring-emerald-300 shadow-[0_0_0_2px_rgba(134,239,172,0.35),0_0_16px_rgba(16,185,129,0.28)]'
+          : isMismatched
+            ? 'ring-2 ring-red-400 shadow-[0_0_0_2px_rgba(248,113,113,0.35),0_0_14px_rgba(239,68,68,0.25)]'
+            : isVisible && 'ring-2 ring-amber-400',
+        isShaking && 'match-shake',
+        isMismatched && 'mismatch-shake',
       )}
       aria-label={isVisible ? `Carta revelada: ${card.name}` : 'Carta virada'}
     >
@@ -22,12 +36,11 @@ function Card({ card, difficulty, isVisible, onFlip, onSoundHintClick, canPlaySo
       >
         <div className="backface-hidden absolute inset-0 flex h-full items-center justify-center rounded-lg bg-emerald-700/90 text-lg font-semibold text-white md:rounded-xl">
           {card.type === 'sound' && (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                onSoundHintClick(card)
-              }}
+            <span
+              role="button"
+              tabIndex={-1}
+              onMouseDown={handleHintMouseDown}
+              onClick={handleHintClick}
               className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full text-lg shadow sm:right-2 sm:top-2 sm:h-9 sm:w-9"
               aria-label={
                 canPlaySoundHint
@@ -58,7 +71,7 @@ function Card({ card, difficulty, isVisible, onFlip, onSoundHintClick, canPlaySo
                   <path d="m3.27 2 18.73 18.73-1.27 1.27-3.6-3.6c-.96.7-2.05 1.22-3.23 1.49v-2.06c.6-.18 1.16-.44 1.67-.76L12 13.5V18l-5-4H3v-4h3.5L2 3.27 3.27 2zM12 6v4.23l-2-2V10H7.77L12 6z" />
                 </svg>
               )}
-            </button>
+            </span>
           )}
           ?
         </div>
