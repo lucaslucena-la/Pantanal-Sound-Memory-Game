@@ -39,6 +39,13 @@ O jogador deve encontrar pares corretos entre uma carta com a imagem do animal e
 | Tailwind CSS | Estilização                          |
 | clsx         | Composição de classes condicionais   |
 
+## Clonando o repositório
+
+Para obter o projeto localmente, utilize o comando:
+
+```bash
+git clone https://github.com/lucaslucena-la/Pantanal-Sound-Memory-Game.git
+```
 ## Como rodar
 
 **Pré-requisitos:** Node.js e npm
