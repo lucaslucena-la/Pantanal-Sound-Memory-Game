@@ -2,6 +2,7 @@ import clsx from 'clsx'
 
 function Card({ card, difficulty, isVisible, isShaking, isMismatched, onFlip, onSoundHintClick, canPlaySoundHint }) {
   const isHardMode = difficulty === 'dificil'
+
   const handleHintMouseDown = (event) => {
     event.stopPropagation()
   }
